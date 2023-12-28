@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+              httpGet:
+                path: /index.html
+                port: 80
+              initialDelaySeconds: 10 #it will wait for 10 seconds
+              periodSeconds: 5 # it will check for each 5 seconds 
+              timeoutSeconds: 3 # If something not working it will wait for 3 seconds
+              successThreshold: 1
+              failureThreshold: 3 # if it fail continious 3 times the readinessProbe won't send the traffic to pod
+          livenessProbe:
+              httpGet:
+                path: /index.html
+                port: 80
+              initialDelaySeconds: 20 #it will wait for 10 seconds
+              periodSeconds: 5 # it will check for each 5 seconds 
+              timeoutSeconds: 3 # If something not working it will wait for 3 seconds
+              successThreshold: 1
+              failureThreshold: 3 # if it fail continious 3 times the readinessProbe won't send the traffic to pod     
+          startupProbe: # for big application if there is any dependency while loading it hold the time to complete then it will allow R & L probe to run
+              httpGet:
+                path: /index.html
+                port: 80
+              initialDelaySeconds: 20 #it will wait for 10 seconds
+              periodSeconds: 5 # it will check for each 5 seconds 
+              timeoutSeconds: 3 # If something not working it will wait for 3 seconds
+              successThreshold: 1
+              failureThreshold: 3 # if it fail continious 3 times the readinessProbe won't send the traffic to pod         
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort
